@@ -8,7 +8,7 @@ import urllib.parse
 import json
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 try:
@@ -138,7 +138,7 @@ def _sb_load_history():
 def _sb_save_discussion(disc):
     payload = {
         "id":              disc["id"],
-        "created_at":      disc.get("created_at", datetime.utcnow().isoformat()),
+        "created_at":      disc.get("created_at", datetime.now(timezone.utc).replace(tzinfo=None).isoformat()),
         "question":        disc.get("question",""),
         "phase":           disc.get("phase", 0),
         "r1":              disc.get("r1", {}),
@@ -224,12 +224,12 @@ def _parse_dt(s):
 def filter_history(days):
     history = load_history()
     if days > 0:
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=days)
         history = [d for d in history if _parse_dt(d.get("created_at","")) >= cutoff]
     return sorted(history, key=lambda d: d.get("created_at",""), reverse=True)
 
 def group_by_date(discs):
-    now = datetime.utcnow().date()
+    now = datetime.now(timezone.utc).replace(tzinfo=None).date()
     groups = {"Today":[],"Yesterday":[],"This Week":[],"Older":[]}
     for d in discs:
         try: ts = _parse_dt(d.get("created_at","")).date()
@@ -460,7 +460,7 @@ def render_history_sidebar():
                     st.markdown(f'<div style="background:{bg};border-left:{bl};padding:8px 10px;border-radius:6px;margin-bottom:4px;font-family:monospace">'
                                 f'<div style="font-size:11px;color:{"#E0E8F5" if is_active else "#8090A8"};line-height:1.4">{q_short}</div>'
                                 f'<div style="font-size:9px;color:#2A3A4A;margin-top:3px">{tstr}{fu_badge}</div></div>',unsafe_allow_html=True)
-                    if st.button("open",key=f"open_{disc_id}",label_visibility="collapsed"):
+                    if st.button("▶",key=f"open_{disc_id}",help="Resume this discussion"):
                         _load_discussion(disc); st.rerun()
                 with cd:
                     if st.button("✕",key=f"del_{disc_id}",help="Delete"):
@@ -481,7 +481,7 @@ def _load_discussion(disc):
 
 def _current_discussion():
     return {"id":st.session_state.get("active_id",str(uuid.uuid4())),
-            "created_at":st.session_state.get("created_at",datetime.utcnow().isoformat()),
+            "created_at":st.session_state.get("created_at",datetime.now(timezone.utc).replace(tzinfo=None).isoformat()),
             "question":st.session_state.get("question",""),"phase":st.session_state.get("phase",0),
             "r1":st.session_state.get("r1",{}),"r2":st.session_state.get("r2",{}),
             "synthesis":st.session_state.get("synthesis",""),"followups":st.session_state.get("followups",[]),
@@ -524,7 +524,7 @@ def main():
         disc_id=str(uuid.uuid4())
         st.session_state.update({"phase":1,"question":question.strip(),"r1":{},"r2":{},"synthesis":None,
                                   "followups":[],"context_summary":context_summary,
-                                  "active_id":disc_id,"created_at":datetime.utcnow().isoformat()})
+                                  "active_id":disc_id,"created_at":datetime.now(timezone.utc).replace(tzinfo=None).isoformat()})
 
     q=st.session_state.question
     if not q: return
