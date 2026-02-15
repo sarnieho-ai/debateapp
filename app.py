@@ -7,7 +7,6 @@ import io
 import urllib.parse
 from typing import Optional
 
-# Optional imports with graceful degradation
 try:
     import pdfplumber
     PDF_SUPPORT = True
@@ -39,7 +38,7 @@ html, body, [class*="css"] {
 }
 .stApp { background-color: #070B12 !important; }
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 1.5rem; padding-bottom: 4rem; max-width: 1400px; }
+.block-container { padding-top: 1.5rem; padding-bottom: 4rem; max-width: 1500px; }
 .stTextArea textarea {
     background: #0D1420 !important; border: 1px solid #1A2A3A !important;
     color: #D0DCE8 !important; font-family: 'JetBrains Mono', monospace !important;
@@ -63,7 +62,6 @@ html, body, [class*="css"] {
     background: #0A0F1C !important; border: 1px dashed #1E2E42 !important;
     border-radius: 8px !important; padding: 8px !important;
 }
-[data-testid="stFileUploader"] label { color: #3A5A7A !important; font-size: 11px !important; }
 .streamlit-expanderHeader {
     background: #0D1420 !important; border: 1px solid #1A2A3A !important;
     border-radius: 6px !important; color: #7BA7FF !important;
@@ -74,12 +72,13 @@ html, body, [class*="css"] {
 
 # ─── AI Config ──────────────────────────────────────────────────
 AI_CONFIG = {
-    "claude":     {"name": "Claude",     "maker": "Anthropic",  "color": "#FF8B4E", "bg": "rgba(255,139,78,0.08)",  "border": "rgba(255,139,78,0.35)"},
-    "gemini":     {"name": "Gemini",     "maker": "Google",     "color": "#7BA7FF", "bg": "rgba(123,167,255,0.08)", "border": "rgba(123,167,255,0.35)"},
-    "gpt4":       {"name": "GPT-4",      "maker": "OpenAI",     "color": "#A8E6A3", "bg": "rgba(168,230,163,0.08)", "border": "rgba(168,230,163,0.35)"},
-    "perplexity": {"name": "Perplexity", "maker": "Perplexity", "color": "#3DFFC0", "bg": "rgba(61,255,192,0.08)",  "border": "rgba(61,255,192,0.35)"},
+    "claude":    {"name": "Claude",    "maker": "Anthropic",  "color": "#FF8B4E", "bg": "rgba(255,139,78,0.08)",  "border": "rgba(255,139,78,0.35)"},
+    "gemini":    {"name": "Gemini",    "maker": "Google",     "color": "#7BA7FF", "bg": "rgba(123,167,255,0.08)", "border": "rgba(123,167,255,0.35)"},
+    "gpt4":      {"name": "GPT-4",     "maker": "OpenAI",     "color": "#A8E6A3", "bg": "rgba(168,230,163,0.08)", "border": "rgba(168,230,163,0.35)"},
+    "perplexity":{"name": "Perplexity","maker": "Perplexity", "color": "#3DFFC0", "bg": "rgba(61,255,192,0.08)",  "border": "rgba(61,255,192,0.35)"},
+    "deepseek":  {"name": "DeepSeek",  "maker": "DeepSeek",   "color": "#C084FC", "bg": "rgba(192,132,252,0.08)", "border": "rgba(192,132,252,0.35)"},
 }
-PERSONAS_ORDER = ["claude", "gemini", "gpt4", "perplexity"]
+PERSONAS_ORDER = ["claude", "gemini", "gpt4", "perplexity", "deepseek"]
 
 PERSONAS = {
     "claude": {
@@ -102,18 +101,23 @@ PERSONAS = {
         "debate":   "You are Perplexity AI. Push back on vagueness, validate accurate points, add concrete facts or research others missed. 2-4 paragraphs.",
         "followup": "You are Perplexity AI in an ongoing multi-AI discussion. Ground the follow-up in concrete facts and research, referencing what was established. 2-3 paragraphs.",
     },
+    "deepseek": {
+        "initial":  "You are DeepSeek, an AI model by DeepSeek AI with exceptional strength in STEM, mathematics, coding, and scientific reasoning. You also bring a distinct perspective shaped by broad training across global and Asian knowledge sources. Be rigorous, precise, and analytically deep. Where relevant, highlight mathematical foundations, algorithmic thinking, or scientific principles. 3-5 paragraphs.",
+        "debate":   "You are DeepSeek by DeepSeek AI. You gave an initial answer. Now engage with the other AIs. Apply your strength in rigorous logical and mathematical reasoning to validate or challenge their arguments. Identify where their reasoning is imprecise or where STEM principles can sharpen the discussion. 2-4 paragraphs.",
+        "followup": "You are DeepSeek by DeepSeek AI in an ongoing multi-AI discussion. Respond to the follow-up with analytical precision and STEM-grounded reasoning, referencing the prior discussion where relevant. 2-3 paragraphs.",
+    },
 }
 
 SYNTH_SYSTEM = (
-    "You are a neutral expert moderator synthesizing a multi-AI discussion between Claude, Gemini, GPT-4, and Perplexity. "
-    "Produce the single best, most comprehensive answer by incorporating the strongest insights, "
+    "You are a neutral expert moderator synthesizing a multi-AI discussion between Claude, Gemini, GPT-4, Perplexity, and DeepSeek. "
+    "Produce the single best, most comprehensive answer by incorporating the strongest insights from all five AIs, "
     "resolving disagreements with sound reasoning, and eliminating redundancy. Be definitive, well-structured, and clear."
 )
 
 FOLLOWUP_SYNTH_SYSTEM = (
-    "You are a neutral expert moderator in an ongoing multi-AI discussion. "
-    "A follow-up question has been raised. Synthesize the four AIs follow-up responses into the best possible answer, "
-    "incorporating new insights and how they update or refine the previous synthesis."
+    "You are a neutral expert moderator in an ongoing multi-AI discussion between Claude, Gemini, GPT-4, Perplexity, and DeepSeek. "
+    "A follow-up question has been raised. Synthesize the five AIs follow-up responses into the best possible updated answer, "
+    "incorporating new insights and how they refine the previous synthesis."
 )
 
 # ─── Secrets ────────────────────────────────────────────────────
@@ -127,6 +131,7 @@ ANTHROPIC_KEY  = get_secret("ANTHROPIC_API_KEY")
 GEMINI_KEY     = get_secret("GEMINI_API_KEY")
 OPENAI_KEY     = get_secret("OPENAI_API_KEY")
 PERPLEXITY_KEY = get_secret("PERPLEXITY_API_KEY")
+DEEPSEEK_KEY   = get_secret("DEEPSEEK_API_KEY")
 
 # ─── Context Processing ──────────────────────────────────────────
 def extract_pdf_text(file_bytes: bytes) -> str:
@@ -136,8 +141,7 @@ def extract_pdf_text(file_bytes: bytes) -> str:
         with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
             pages = [page.extract_text() or "" for page in pdf.pages]
         text = "\n\n".join(pages).strip()
-        # Trim to ~8000 chars to keep within context limits
-        return text[:8000] + ("\n\n[...truncated for length]" if len(text) > 8000 else "")
+        return text[:8000] + ("\n\n[...truncated]" if len(text) > 8000 else "")
     except Exception as e:
         return f"[PDF extraction error: {e}]"
 
@@ -153,20 +157,18 @@ def fetch_url_text(url: str) -> str:
             text = soup.get_text(separator="\n", strip=True)
         else:
             text = r.text
-        # Trim to ~6000 chars
-        return text[:6000] + ("\n\n[...truncated for length]" if len(text) > 6000 else "")
+        return text[:6000] + ("\n\n[...truncated]" if len(text) > 6000 else "")
     except Exception as e:
         return f"[URL fetch error: {e}]"
 
-def image_to_base64(file_bytes: bytes, media_type: str) -> str:
+def image_to_base64(file_bytes: bytes) -> str:
     return base64.b64encode(file_bytes).decode("utf-8")
 
-def build_text_context(context_items: list) -> str:
-    """Build a text block from non-image context items."""
-    if not context_items:
+def build_text_context(items: list) -> str:
+    if not items:
         return ""
     parts = ["[ADDITIONAL CONTEXT PROVIDED BY USER]"]
-    for item in context_items:
+    for item in items:
         parts.append(f"\n--- {item['label']} ---\n{item['content']}")
     parts.append("[END OF CONTEXT]\n\n")
     return "\n".join(parts)
@@ -175,9 +177,7 @@ def build_text_context(context_items: list) -> str:
 def call_claude(system: str, message: str, image_data: list = None) -> str:
     client = anthropic.Anthropic(api_key=ANTHROPIC_KEY)
     if image_data:
-        content = []
-        for img in image_data:
-            content.append({"type": "image", "source": {"type": "base64", "media_type": img["media_type"], "data": img["data"]}})
+        content = [{"type": "image", "source": {"type": "base64", "media_type": img["media_type"], "data": img["data"]}} for img in image_data]
         content.append({"type": "text", "text": message})
     else:
         content = message
@@ -198,35 +198,27 @@ def call_gemini(system: str, message: str, image_data: list = None) -> str:
         for img in image_data:
             parts.append({"inline_data": {"mime_type": img["media_type"], "data": img["data"]}})
     parts.append({"text": message})
-    payload = {
-        "system_instruction": {"parts": [{"text": system}]},
-        "contents": [{"parts": parts}],
-    }
-    r = requests.post(url, json=payload, timeout=60)
+    r = requests.post(url, json={"system_instruction": {"parts": [{"text": system}]}, "contents": [{"parts": parts}]}, timeout=60)
     r.raise_for_status()
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
-def call_gpt4(system: str, message: str, image_data: list = None) -> str:
-    if not OPENAI_KEY:
-        raise ValueError("No OpenAI key")
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {OPENAI_KEY}"}
+def call_openai_compatible(api_key: str, base_url: str, model: str, system: str, message: str, image_data: list = None) -> str:
+    """Shared caller for OpenAI-compatible APIs (GPT-4, DeepSeek)."""
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"}
     if image_data:
-        content = []
-        for img in image_data:
-            content.append({"type": "image_url", "image_url": {"url": f"data:{img['media_type']};base64,{img['data']}"}})
+        content = [{"type": "image_url", "image_url": {"url": f"data:{img['media_type']};base64,{img['data']}"}} for img in image_data]
         content.append({"type": "text", "text": message})
     else:
         content = message
-    r = requests.post("https://api.openai.com/v1/chat/completions", json={
-        "model": "gpt-4o",
-        "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}],
-        "max_tokens": 1000,
-    }, headers=headers, timeout=60)
+    r = requests.post(
+        f"{base_url}/chat/completions",
+        json={"model": model, "messages": [{"role": "system", "content": system}, {"role": "user", "content": content}], "max_tokens": 1000},
+        headers=headers, timeout=60,
+    )
     r.raise_for_status()
     return r.json()["choices"][0]["message"]["content"]
 
 def call_perplexity(system: str, message: str, image_data: list = None) -> str:
-    # Perplexity doesn't support vision — image context described in text
     if not PERPLEXITY_KEY:
         raise ValueError("No Perplexity key")
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {PERPLEXITY_KEY}"}
@@ -243,17 +235,24 @@ def call_persona(persona: str, prompt_type: str, message: str, image_data: list 
         if persona == "gemini":
             return call_gemini(system, message, image_data)
         elif persona == "gpt4":
-            return call_gpt4(system, message, image_data)
+            if not OPENAI_KEY:
+                raise ValueError("No OpenAI key")
+            return call_openai_compatible(OPENAI_KEY, "https://api.openai.com/v1", "gpt-4o", system, message, image_data)
         elif persona == "perplexity":
             return call_perplexity(system, message, image_data)
+        elif persona == "deepseek":
+            if not DEEPSEEK_KEY:
+                raise ValueError("No DeepSeek key")
+            # DeepSeek doesn't support vision — strip image_data, text context already included
+            return call_openai_compatible(DEEPSEEK_KEY, "https://api.deepseek.com/v1", "deepseek-chat", system, message, None)
         else:
             return call_claude(system, message, image_data)
     except Exception:
-        return call_claude(system, message, image_data)
+        return call_claude(system, message, image_data)  # fallback
 
 def run_parallel(tasks: list) -> list:
     results = [None] * len(tasks)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         future_to_idx = {executor.submit(call_persona, *t): i for i, t in enumerate(tasks)}
         for future in concurrent.futures.as_completed(future_to_idx):
             idx = future_to_idx[future]
@@ -291,8 +290,7 @@ def phase_header(num: int, title: str, state: str):
     st.markdown(
         f'<div style="display:flex;align-items:center;gap:12px;margin:20px 0 14px 0">'
         f'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;'
-        f'border-radius:50%;background:{bg};border:1.5px solid {border};font-size:12px;font-weight:bold;'
-        f'color:{tc};flex-shrink:0;font-family:monospace">{icon}</span>'
+        f'border-radius:50%;background:{bg};border:1.5px solid {border};font-size:12px;font-weight:bold;color:{tc};flex-shrink:0">{icon}</span>'
         f'<span style="font-size:11px;font-weight:bold;letter-spacing:0.1em;color:{tc};font-family:monospace">{title}</span>'
         f'</div>',
         unsafe_allow_html=True
@@ -302,7 +300,13 @@ def divider():
     st.markdown('<hr style="border:none;border-top:1px solid #111E2E;margin:24px 0">', unsafe_allow_html=True)
 
 def key_status_banner():
-    checks = [("Claude", ANTHROPIC_KEY, True), ("Gemini", GEMINI_KEY, False), ("GPT-4", OPENAI_KEY, False), ("Perplexity", PERPLEXITY_KEY, False)]
+    checks = [
+        ("Claude",     ANTHROPIC_KEY,  True),
+        ("Gemini",     GEMINI_KEY,     False),
+        ("GPT-4",      OPENAI_KEY,     False),
+        ("Perplexity", PERPLEXITY_KEY, False),
+        ("DeepSeek",   DEEPSEEK_KEY,   False),
+    ]
     parts = []
     for name, key, required in checks:
         if key:
@@ -318,43 +322,26 @@ def key_status_banner():
         unsafe_allow_html=True
     )
 
-# ─── Context Upload UI ───────────────────────────────────────────
+# ─── Context Upload Panel ────────────────────────────────────────
 def render_context_panel() -> tuple:
-    """
-    Renders the upload/URL section.
-    Returns (text_context: str, image_data: list, context_summary: str)
-    """
     with st.expander("📎  ADD CONTEXT — documents, images, or links  (optional)", expanded=False):
         st.markdown(
             '<div style="font-size:10px;color:#3A5060;margin-bottom:12px;font-family:monospace">'
-            'All context is passed to every AI model. Images are sent to vision-capable models (Claude, Gemini, GPT-4). '
-            'Perplexity receives a text description of any image.</div>',
+            'Passed to all models. Images sent natively to Claude, Gemini, GPT-4. '
+            'DeepSeek and Perplexity receive a text description.</div>',
             unsafe_allow_html=True
         )
-
         col_file, col_url = st.columns([3, 2])
-
         with col_file:
             st.markdown('<div style="font-size:10px;color:#5A7A9A;margin-bottom:6px;font-family:monospace">📄 UPLOAD FILES</div>', unsafe_allow_html=True)
-            uploaded = st.file_uploader(
-                label="Upload files",
-                type=["pdf", "png", "jpg", "jpeg", "webp", "gif"],
-                accept_multiple_files=True,
-                label_visibility="collapsed",
-            )
-
+            uploaded = st.file_uploader("Upload", type=["pdf", "png", "jpg", "jpeg", "webp", "gif"], accept_multiple_files=True, label_visibility="collapsed")
         with col_url:
             st.markdown('<div style="font-size:10px;color:#5A7A9A;margin-bottom:6px;font-family:monospace">🔗 ADD URL</div>', unsafe_allow_html=True)
-            url_input = st.text_input(
-                label="URL",
-                placeholder="https://example.com/article",
-                label_visibility="collapsed",
-            )
+            url_input = st.text_input("URL", placeholder="https://example.com/article", label_visibility="collapsed")
 
-    # Process context
     text_context_items = []
     image_data = []
-    context_summary_parts = []
+    summary_parts = []
 
     if uploaded:
         for f in uploaded:
@@ -362,22 +349,21 @@ def render_context_panel() -> tuple:
             if f.type == "application/pdf":
                 text = extract_pdf_text(file_bytes)
                 text_context_items.append({"label": f"PDF: {f.name}", "content": text})
-                context_summary_parts.append(f"📄 {f.name}")
+                summary_parts.append(f"📄 {f.name}")
             elif f.type.startswith("image/"):
-                b64 = image_to_base64(file_bytes, f.type)
+                b64 = image_to_base64(file_bytes)
                 image_data.append({"media_type": f.type, "data": b64, "name": f.name})
-                context_summary_parts.append(f"🖼 {f.name}")
-                # For Perplexity (no vision), add a text note
-                text_context_items.append({"label": f"Image: {f.name}", "content": f"[An image file named '{f.name}' has been provided. Please analyze it based on the question.]"})
+                summary_parts.append(f"🖼 {f.name}")
+                text_context_items.append({"label": f"Image: {f.name}", "content": f"[An image named '{f.name}' has been provided. Analyze it in context of the question.]"})
 
     if url_input and url_input.strip().startswith("http"):
         with st.spinner(f"Fetching {url_input[:50]}..."):
             url_text = fetch_url_text(url_input.strip())
         text_context_items.append({"label": f"URL: {url_input.strip()}", "content": url_text})
-        context_summary_parts.append(f"🔗 {url_input.strip()[:40]}...")
+        summary_parts.append(f"🔗 {url_input.strip()[:40]}...")
 
     text_context = build_text_context(text_context_items)
-    context_summary = ", ".join(context_summary_parts) if context_summary_parts else ""
+    context_summary = ", ".join(summary_parts)
 
     if context_summary:
         st.markdown(
@@ -397,84 +383,44 @@ def render_share_panel(question: str, synthesis: str, followups: list):
         unsafe_allow_html=True
     )
 
-    # Build full shareable text
     fu_text = ""
     for i, fu in enumerate(followups):
         fu_text += f"\n\nFOLLOW-UP {i+1}: {fu['question']}\n{fu.get('synthesis', '')}"
 
     full_text = (
-        f"NEXUS AI — Multi-Model Discussion\n"
-        f"{'='*50}\n\n"
+        f"NEXUS AI — Multi-Model Discussion\n{'='*50}\n\n"
         f"QUESTION: {question}\n\n"
-        f"SYNTHESIZED ANSWER (Claude + Gemini + GPT-4 + Perplexity):\n{synthesis}"
-        f"{fu_text}\n\n"
-        f"Generated by Nexus AI — 4-Model Discussion Engine"
+        f"SYNTHESIZED ANSWER (Claude + Gemini + GPT-4 + Perplexity + DeepSeek):\n{synthesis}"
+        f"{fu_text}\n\nGenerated by Nexus AI — 5-Model Discussion Engine"
     )
 
-    short_summary = synthesis[:280] + "..." if len(synthesis) > 280 else synthesis
-    encoded_text   = urllib.parse.quote(f"Q: {question}\n\n{short_summary}\n\n#NexusAI #AI")
-    encoded_email_body = urllib.parse.quote(full_text)
-    encoded_email_subj = urllib.parse.quote(f"Nexus AI Discussion: {question[:60]}")
-    encoded_wa    = urllib.parse.quote(f"*Nexus AI Discussion*\n\n*Q: {question}*\n\n{short_summary}")
+    short = synthesis[:280] + "..." if len(synthesis) > 280 else synthesis
+    enc_tweet = urllib.parse.quote(f"Q: {question}\n\n{short}\n\n#NexusAI #AI #DeepSeek")
+    enc_body  = urllib.parse.quote(full_text)
+    enc_subj  = urllib.parse.quote(f"Nexus AI Discussion: {question[:60]}")
+    enc_wa    = urllib.parse.quote(f"*Nexus AI Discussion*\n\n*Q: {question}*\n\n{short}")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
-    # 1. Copy to clipboard (JS)
     with col1:
         escaped = full_text.replace("`", "'").replace("\\", "\\\\").replace("\n", "\\n")
         st.components.v1.html(
-            f"""
-            <button onclick="navigator.clipboard.writeText(`{escaped}`).then(()=>{{
+            f"""<button onclick="navigator.clipboard.writeText(`{escaped}`).then(()=>{{
                 this.innerText='✓ COPIED!';this.style.color='#3DFFC0';this.style.borderColor='#3DFFC0';
                 setTimeout(()=>{{this.innerText='📋 COPY';this.style.color='#7BA7FF';this.style.borderColor='rgba(123,167,255,0.4)';}},2000);
             }})" style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);
-            border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;
-            letter-spacing:0.08em;cursor:pointer;transition:all 0.2s">
-            📋 COPY
-            </button>
-            """,
+            border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;letter-spacing:0.08em;cursor:pointer">
+            📋 COPY</button>""",
             height=42,
         )
-
-    # 2. Download as Markdown
     with col2:
-        st.download_button(
-            label="⬇ DOWNLOAD",
-            data=full_text,
-            file_name="nexus-ai-discussion.md",
-            mime="text/markdown",
-            use_container_width=True,
-        )
-
-    # 3. Email
+        st.download_button("⬇ DOWNLOAD", data=full_text, file_name="nexus-ai-discussion.md", mime="text/markdown", use_container_width=True)
     with col3:
-        st.markdown(
-            f'<a href="mailto:?subject={encoded_email_subj}&body={encoded_email_body}" target="_blank">'
-            f'<button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);'
-            f'border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;'
-            f'letter-spacing:0.08em;cursor:pointer">📧 EMAIL</button></a>',
-            unsafe_allow_html=True
-        )
-
-    # 4. WhatsApp
+        st.markdown(f'<a href="mailto:?subject={enc_subj}&body={enc_body}" target="_blank"><button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;letter-spacing:0.08em;cursor:pointer">📧 EMAIL</button></a>', unsafe_allow_html=True)
     with col4:
-        st.markdown(
-            f'<a href="https://wa.me/?text={encoded_wa}" target="_blank">'
-            f'<button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);'
-            f'border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;'
-            f'letter-spacing:0.08em;cursor:pointer">💬 WHATSAPP</button></a>',
-            unsafe_allow_html=True
-        )
-
-    # 5. Twitter/X
+        st.markdown(f'<a href="https://wa.me/?text={enc_wa}" target="_blank"><button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;letter-spacing:0.08em;cursor:pointer">💬 WHATSAPP</button></a>', unsafe_allow_html=True)
     with col5:
-        st.markdown(
-            f'<a href="https://twitter.com/intent/tweet?text={encoded_text}" target="_blank">'
-            f'<button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);'
-            f'border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;'
-            f'letter-spacing:0.08em;cursor:pointer">𝕏 TWITTER</button></a>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<a href="https://twitter.com/intent/tweet?text={enc_tweet}" target="_blank"><button style="width:100%;background:rgba(123,167,255,0.15);color:#7BA7FF;border:1px solid rgba(123,167,255,0.4);border-radius:6px;padding:8px 4px;font-family:monospace;font-size:11px;font-weight:bold;letter-spacing:0.08em;cursor:pointer">𝕏 TWITTER</button></a>', unsafe_allow_html=True)
 
 # ─── Session State ───────────────────────────────────────────────
 def init_state():
@@ -482,7 +428,7 @@ def init_state():
         if k not in st.session_state:
             st.session_state[k] = v
 
-# ─── Main App ────────────────────────────────────────────────────
+# ─── Main ────────────────────────────────────────────────────────
 def main():
     init_state()
 
@@ -491,7 +437,8 @@ def main():
         '<div style="background:rgba(10,14,24,0.97);border-bottom:1px solid #111E2E;padding:18px 32px;margin:-1.5rem -4rem 1.5rem -4rem">'
         '<div style="font-size:20px;font-weight:bold;letter-spacing:0.15em;color:#E0E8F5;font-family:monospace">⬡ NEXUS AI</div>'
         '<div style="font-size:10px;color:#3A5A7A;letter-spacing:0.1em;margin-top:4px;font-family:monospace">'
-        '4-MODEL DISCUSSION ENGINE &nbsp;·&nbsp; CLAUDE &nbsp;·&nbsp; GEMINI &nbsp;·&nbsp; GPT-4 &nbsp;·&nbsp; PERPLEXITY</div></div>',
+        '5-MODEL DISCUSSION ENGINE &nbsp;·&nbsp; CLAUDE &nbsp;·&nbsp; GEMINI &nbsp;·&nbsp; GPT-4 &nbsp;·&nbsp; PERPLEXITY &nbsp;·&nbsp; DEEPSEEK'
+        '</div></div>',
         unsafe_allow_html=True
     )
 
@@ -501,10 +448,8 @@ def main():
         st.error("ANTHROPIC_API_KEY is required. Add it to .streamlit/secrets.toml")
         st.stop()
 
-    # ── Context panel ────────────────────────────────────────────
     text_context, image_data, context_summary = render_context_panel()
 
-    # ── Question Input ───────────────────────────────────────────
     question = st.text_area(
         label="Question",
         placeholder="Ask anything — or describe what you want the AIs to discuss about your uploaded content...",
@@ -517,74 +462,62 @@ def main():
         start = st.button("▶  START DISCUSSION", use_container_width=True)
     with col_note:
         note = f"Context: {context_summary} · " if context_summary else ""
-        st.markdown(
-            f'<div style="color:#2A3A4A;font-size:11px;padding-top:10px;font-family:monospace">{note}4 models run in parallel · missing keys fall back to Claude simulation</div>',
-            unsafe_allow_html=True
-        )
+        st.markdown(f'<div style="color:#2A3A4A;font-size:11px;padding-top:10px;font-family:monospace">{note}5 models run in parallel · missing keys fall back to Claude simulation</div>', unsafe_allow_html=True)
 
     divider()
 
-    # ── Idle state ───────────────────────────────────────────────
+    # Idle legend
     if st.session_state.phase == 0 and not start:
         st.markdown(
             '<div style="padding:20px;background:#090E18;border-radius:10px;border:1px solid #111E2E;font-family:monospace">'
             '<div style="font-size:9px;letter-spacing:0.12em;color:#3A5060;margin-bottom:14px">PARTICIPATING MODELS</div>'
             '<div style="display:flex;flex-wrap:wrap;gap:20px;margin-bottom:14px">'
-            '<span><b style="color:#FF8B4E">● Claude</b> <span style="color:#2A3A4A;font-size:10px">— nuance, intellectual honesty</span></span>'
-            '<span><b style="color:#7BA7FF">● Gemini</b> <span style="color:#2A3A4A;font-size:10px">— broad cross-domain knowledge</span></span>'
-            '<span><b style="color:#A8E6A3">● GPT-4</b> <span style="color:#2A3A4A;font-size:10px">— deep logical reasoning</span></span>'
-            '<span><b style="color:#3DFFC0">● Perplexity</b> <span style="color:#2A3A4A;font-size:10px">— real-time facts & research</span></span>'
+            '<span><b style="color:#FF8B4E">● Claude</b> <span style="color:#2A3A4A;font-size:10px">— nuance & honesty</span></span>'
+            '<span><b style="color:#7BA7FF">● Gemini</b> <span style="color:#2A3A4A;font-size:10px">— broad knowledge</span></span>'
+            '<span><b style="color:#A8E6A3">● GPT-4</b> <span style="color:#2A3A4A;font-size:10px">— logical structure</span></span>'
+            '<span><b style="color:#3DFFC0">● Perplexity</b> <span style="color:#2A3A4A;font-size:10px">— live research</span></span>'
+            '<span><b style="color:#C084FC">● DeepSeek</b> <span style="color:#2A3A4A;font-size:10px">— STEM depth & alternative lens</span></span>'
             '</div>'
             '<div style="border-top:1px solid #111E2E;padding-top:12px;font-size:10px;color:#2A3A4A">'
             'ROUND 1 — independent answers &nbsp;·&nbsp; ROUND 2 — cross-examination &nbsp;·&nbsp; '
-            'SYNTHESIS — unified best answer &nbsp;·&nbsp; FOLLOW-UP — continue the discussion &nbsp;·&nbsp; '
-            'SHARE — copy, download, email, WhatsApp, Twitter'
+            'SYNTHESIS — unified best answer &nbsp;·&nbsp; FOLLOW-UP — continue the discussion &nbsp;·&nbsp; SHARE — export anywhere'
             '</div></div>',
             unsafe_allow_html=True
         )
         return
 
-    # ── Start ────────────────────────────────────────────────────
+    # Start new discussion
     if start and question.strip():
-        st.session_state.phase          = 1
-        st.session_state.question       = question.strip()
-        st.session_state.r1             = {}
-        st.session_state.r2             = {}
-        st.session_state.synthesis      = None
-        st.session_state.followups      = []
-        st.session_state.context_summary = context_summary
+        st.session_state.update({"phase": 1, "question": question.strip(), "r1": {}, "r2": {}, "synthesis": None, "followups": [], "context_summary": context_summary})
 
     q = st.session_state.question
     if not q:
         return
 
-    # Prepend context to message
     def with_ctx(msg: str) -> str:
         return text_context + msg if text_context else msg
 
     # ── ROUND 1 ──────────────────────────────────────────────────
-    phase_header(1, "INITIAL RESPONSES — Each AI answers independently",
-                 "done" if st.session_state.phase > 1 else "active")
+    phase_header(1, "INITIAL RESPONSES — Each AI answers independently", "done" if st.session_state.phase > 1 else "active")
 
     if not st.session_state.r1:
-        cols = st.columns(4)
+        cols = st.columns(5)
         for i, p in enumerate(PERSONAS_ORDER):
             cols[i].markdown(ai_card_html(p, "⟳ Thinking...", "ROUND 1"), unsafe_allow_html=True)
-        with st.spinner("Round 1 — all models answering..."):
+        with st.spinner("Round 1 — all 5 models answering in parallel..."):
             results = run_parallel([(p, "initial", with_ctx(q), image_data) for p in PERSONAS_ORDER])
         st.session_state.r1 = dict(zip(PERSONAS_ORDER, results))
         st.session_state.phase = 2
         st.rerun()
 
-    cols = st.columns(4)
+    cols = st.columns(5)
     for i, p in enumerate(PERSONAS_ORDER):
         cols[i].markdown(ai_card_html(p, st.session_state.r1[p], "ROUND 1"), unsafe_allow_html=True)
 
     divider()
 
     # ── ROUND 2 ──────────────────────────────────────────────────
-    phase_header(2, "OPEN DEBATE — Each AI critiques and builds on the others",
-                 "done" if st.session_state.phase > 2 else "active")
+    phase_header(2, "OPEN DEBATE — Each AI critiques and builds on the others", "done" if st.session_state.phase > 2 else "active")
 
     def make_debate(me: str) -> str:
         others = [p for p in PERSONAS_ORDER if p != me]
@@ -595,33 +528,32 @@ def main():
         )
 
     if not st.session_state.r2:
-        cols = st.columns(4)
+        cols = st.columns(5)
         for i, p in enumerate(PERSONAS_ORDER):
             cols[i].markdown(ai_card_html(p, "⟳ Reading others' responses...", "ROUND 2"), unsafe_allow_html=True)
-        with st.spinner("Round 2 — models debating each other..."):
+        with st.spinner("Round 2 — all 5 models debating each other..."):
             results = run_parallel([(p, "debate", make_debate(p), None) for p in PERSONAS_ORDER])
         st.session_state.r2 = dict(zip(PERSONAS_ORDER, results))
         st.session_state.phase = 3
         st.rerun()
 
-    cols = st.columns(4)
+    cols = st.columns(5)
     for i, p in enumerate(PERSONAS_ORDER):
         cols[i].markdown(ai_card_html(p, st.session_state.r2[p], "ROUND 2"), unsafe_allow_html=True)
 
     divider()
 
     # ── SYNTHESIS ────────────────────────────────────────────────
-    phase_header(3, "FINAL SYNTHESIS — Best answer distilled from all four voices",
-                 "done" if st.session_state.phase >= 4 else "active")
+    phase_header(3, "FINAL SYNTHESIS — Best answer distilled from all five voices", "done" if st.session_state.phase >= 4 else "active")
 
     if not st.session_state.synthesis:
         synth_prompt = (
             f'QUESTION: "{q}"\n\n'
             "ROUND 1:\n" + "\n\n".join(f"[{AI_CONFIG[p]['name']}]\n{st.session_state.r1[p]}" for p in PERSONAS_ORDER)
             + "\n\nROUND 2:\n" + "\n\n".join(f"[{AI_CONFIG[p]['name']}]\n{st.session_state.r2[p]}" for p in PERSONAS_ORDER)
-            + "\n\nProvide the single best comprehensive answer. Incorporate strongest insights. Be definitive and clear."
+            + "\n\nProvide the single best comprehensive answer incorporating the strongest insights from all five AIs. Be definitive and clear."
         )
-        with st.spinner("Synthesizing final answer..."):
+        with st.spinner("Synthesizing final answer from all 5 models..."):
             try:
                 st.session_state.synthesis = call_claude(SYNTH_SYSTEM, synth_prompt)
             except Exception as e:
@@ -636,12 +568,12 @@ def main():
         f'<div style="width:28px;height:28px;border-radius:50%;background:rgba(61,255,192,0.1);border:1.5px solid rgba(61,255,192,0.4);'
         f'display:flex;align-items:center;justify-content:center;color:#3DFFC0;font-size:14px">✦</div>'
         f'<div><div style="font-size:12px;font-weight:bold;color:#3DFFC0;letter-spacing:0.08em">SYNTHESIZED ANSWER</div>'
-        f'<div style="font-size:10px;color:#2A5A4A">Moderated consensus · Claude · Gemini · GPT-4 · Perplexity</div></div></div>'
+        f'<div style="font-size:10px;color:#2A5A4A">Moderated consensus · Claude · Gemini · GPT-4 · Perplexity · DeepSeek</div></div></div>'
         f'<div style="color:#C0D8D0;font-size:13.5px;line-height:1.8;white-space:pre-wrap">{safe_synth}</div></div>',
         unsafe_allow_html=True
     )
 
-    # ── FOLLOW-UP CHAT ───────────────────────────────────────────
+    # ── FOLLOW-UP ────────────────────────────────────────────────
     if st.session_state.phase >= 4:
         divider()
         st.markdown(
@@ -652,7 +584,7 @@ def main():
 
         for i, fu in enumerate(st.session_state.followups):
             with st.expander(f"↩ Follow-up {i+1}: {fu['question'][:60]}{'...' if len(fu['question']) > 60 else ''}", expanded=(i == len(st.session_state.followups) - 1)):
-                cols = st.columns(4)
+                cols = st.columns(5)
                 for j, p in enumerate(PERSONAS_ORDER):
                     cols[j].markdown(ai_card_html(p, fu["responses"].get(p, ""), "FOLLOW-UP"), unsafe_allow_html=True)
                 if fu.get("synthesis"):
@@ -667,27 +599,17 @@ def main():
 
         col_input, col_send = st.columns([5, 1])
         with col_input:
-            followup_q = st.text_input(
-                label="Follow-up",
-                placeholder="Ask a follow-up, counter the synthesis, or challenge a specific point...",
-                label_visibility="collapsed",
-                key=f"fu_input_{len(st.session_state.followups)}",
-            )
+            followup_q = st.text_input("Follow-up", placeholder="Ask a follow-up, counter the synthesis, or challenge a specific point...", label_visibility="collapsed", key=f"fu_{len(st.session_state.followups)}")
         with col_send:
             send_fu = st.button("▶  SEND", use_container_width=True, key=f"send_{len(st.session_state.followups)}")
 
         if send_fu and followup_q.strip():
             history_ctx = (
                 f'ORIGINAL QUESTION: "{q}"\n\nINITIAL SYNTHESIS:\n{st.session_state.synthesis}\n\n'
-                + (
-                    "PRIOR FOLLOW-UPS:\n" + "\n\n".join(
-                        f"Q{i+1}: {fu['question']}\nSynthesis: {fu.get('synthesis', '')}"
-                        for i, fu in enumerate(st.session_state.followups)
-                    ) + "\n\n" if st.session_state.followups else ""
-                )
+                + ("PRIOR FOLLOW-UPS:\n" + "\n\n".join(f"Q{i+1}: {fu['question']}\nSynthesis: {fu.get('synthesis','')}" for i, fu in enumerate(st.session_state.followups)) + "\n\n" if st.session_state.followups else "")
                 + f'NEW FOLLOW-UP: "{followup_q.strip()}"'
             )
-            with st.spinner("All 4 models responding..."):
+            with st.spinner("All 5 models responding..."):
                 fu_results = run_parallel([(p, "followup", history_ctx, None) for p in PERSONAS_ORDER])
             fu_map = dict(zip(PERSONAS_ORDER, fu_results))
             fu_synth_prompt = (
@@ -703,10 +625,8 @@ def main():
             st.session_state.followups.append({"question": followup_q.strip(), "responses": fu_map, "synthesis": fu_synthesis})
             st.rerun()
 
-        # ── SHARE ────────────────────────────────────────────────
         render_share_panel(q, st.session_state.synthesis, st.session_state.followups)
 
-        # Reset
         st.markdown('<div style="margin-top:20px"></div>', unsafe_allow_html=True)
         if st.button("↺  NEW DISCUSSION"):
             for key in ["phase", "question", "r1", "r2", "synthesis", "followups", "context_summary"]:
