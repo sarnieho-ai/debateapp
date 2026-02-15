@@ -205,18 +205,34 @@ def delete_discussion(disc_id):
     if STORAGE_MODE == "supabase": _sb_delete_discussion(disc_id)
     else: _local_delete_discussion(disc_id)
 
+def _parse_dt(s):
+    """Parse ISO datetime string from either local JSON or Supabase, always returns naive UTC datetime."""
+    if not s:
+        return datetime(2000, 1, 1)
+    try:
+        # Strip Z suffix
+        s = s.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(s)
+        # If timezone-aware, convert to naive UTC
+        if dt.tzinfo is not None:
+            dt = dt.utctimetuple()
+            dt = datetime(*dt[:6])
+        return dt
+    except Exception:
+        return datetime(2000, 1, 1)
+
 def filter_history(days):
     history = load_history()
     if days > 0:
-        cutoff = datetime.utcnow()-timedelta(days=days)
-        history = [d for d in history if datetime.fromisoformat(d.get("created_at","2000-01-01").replace("Z",""))>=cutoff]
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        history = [d for d in history if _parse_dt(d.get("created_at","")) >= cutoff]
     return sorted(history, key=lambda d: d.get("created_at",""), reverse=True)
 
 def group_by_date(discs):
     now = datetime.utcnow().date()
     groups = {"Today":[],"Yesterday":[],"This Week":[],"Older":[]}
     for d in discs:
-        try: ts=datetime.fromisoformat(d["created_at"].replace("Z","")).date()
+        try: ts = _parse_dt(d.get("created_at","")).date()
         except: ts=now
         delta=(now-ts).days
         if delta==0: groups["Today"].append(d)
@@ -433,7 +449,7 @@ def render_history_sidebar():
             for disc in items:
                 disc_id=disc.get("id",""); q=disc.get("question","Untitled")
                 q_short=q[:45]+("..." if len(q)>45 else "")
-                try: tstr=datetime.fromisoformat(disc.get("created_at","").replace("Z","")).strftime("%H:%M")
+                try: tstr=_parse_dt(disc.get("created_at","")).strftime("%H:%M")
                 except: tstr=""
                 fu_c=len(disc.get("followups",[])); is_active=disc_id==active_id
                 bg="rgba(123,167,255,0.1)" if is_active else "transparent"
