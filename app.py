@@ -84,6 +84,7 @@ PERSONAS = {
 
 SYNTH_SYSTEM = "You are a neutral expert moderator synthesizing a multi-AI discussion between Claude, Gemini, GPT-4, Perplexity, and DeepSeek. Produce the single best comprehensive answer incorporating strongest insights, resolving disagreements. Be definitive and clear."
 FOLLOWUP_SYNTH_SYSTEM = "You are a neutral expert moderator. Synthesize the five AIs follow-up responses into the best updated answer, incorporating new insights that refine the previous synthesis."
+FACTCHECK_SYSTEM = "You are Perplexity AI, a rigorous fact-checker with real-time web access. Your job: verify the synthesized answer below with healthy skepticism. Check each major claim against current sources. Flag potential hallucinations, outdated info, or unsupported assertions. Cite sources where you verify or contradict claims. If everything checks out, say so. Be constructively critical — assume the synthesis might be wrong and prove it right or wrong."
 
 # ─── Secrets ─────────────────────────────────────────────────────
 def get_secret(key):
@@ -144,6 +145,7 @@ def _sb_save_discussion(disc):
         "r1":              disc.get("r1", {}),
         "r2":              disc.get("r2", {}),
         "synthesis":       disc.get("synthesis","") or "",
+        "factcheck":       disc.get("factcheck","") or "",
         "followups":       disc.get("followups", []),
         "context_summary": disc.get("context_summary",""),
     }
@@ -434,7 +436,7 @@ def render_history_sidebar():
         st.markdown('<div style="font-size:14px;font-weight:bold;letter-spacing:0.12em;color:#E0E8F5;margin-bottom:4px;font-family:monospace">⬡ NEXUS AI</div>'
                     '<div style="font-size:9px;color:#3A5A7A;letter-spacing:0.1em;margin-bottom:20px;font-family:monospace">DISCUSSION HISTORY</div>',unsafe_allow_html=True)
         if st.button("＋  NEW DISCUSSION",use_container_width=True):
-            for k in ["phase","question","r1","r2","synthesis","followups","context_summary","active_id"]: st.session_state.pop(k,None)
+            for k in ["phase","question","r1","r2","synthesis","factcheck","followups","context_summary","active_id"]: st.session_state.pop(k,None)
             st.rerun()
         st.markdown('<hr style="border:none;border-top:1px solid #111E2E;margin:14px 0">',unsafe_allow_html=True)
         filter_map={"Today":1,"Last 7 days":7,"Last 30 days":30,"All time":0}
@@ -466,7 +468,7 @@ def render_history_sidebar():
                     if st.button("✕",key=f"del_{disc_id}",help="Delete"):
                         delete_discussion(disc_id)
                         if active_id==disc_id:
-                            for k in ["phase","question","r1","r2","synthesis","followups","active_id"]: st.session_state.pop(k,None)
+                            for k in ["phase","question","r1","r2","synthesis","factcheck","followups","active_id"]: st.session_state.pop(k,None)
                         st.rerun()
         mode_color = "#3DFFC0" if STORAGE_MODE=="supabase" else "#C084FC"
         mode_label = "Supabase (cloud)" if STORAGE_MODE=="supabase" else "Local JSON (add SUPABASE_URL + SUPABASE_KEY to enable cloud)"
@@ -476,7 +478,8 @@ def render_history_sidebar():
 def _load_discussion(disc):
     for k,v in [("active_id",disc.get("id","")),("phase",disc.get("phase",4)),("question",disc.get("question","")),
                 ("r1",disc.get("r1",{})),("r2",disc.get("r2",{})),("synthesis",disc.get("synthesis","")),
-                ("followups",disc.get("followups",[])),("context_summary",disc.get("context_summary",""))]:
+                ("factcheck",disc.get("factcheck","")),("followups",disc.get("followups",[])),
+                ("context_summary",disc.get("context_summary",""))]:
         st.session_state[k]=v
 
 def _current_discussion():
@@ -484,11 +487,12 @@ def _current_discussion():
             "created_at":st.session_state.get("created_at",datetime.now(timezone.utc).replace(tzinfo=None).isoformat()),
             "question":st.session_state.get("question",""),"phase":st.session_state.get("phase",0),
             "r1":st.session_state.get("r1",{}),"r2":st.session_state.get("r2",{}),
-            "synthesis":st.session_state.get("synthesis",""),"followups":st.session_state.get("followups",[]),
+            "synthesis":st.session_state.get("synthesis",""),"factcheck":st.session_state.get("factcheck",""),
+            "followups":st.session_state.get("followups",[]),
             "context_summary":st.session_state.get("context_summary","")}
 
 def init_state():
-    for k,v in {"phase":0,"question":"","r1":{},"r2":{},"synthesis":None,"followups":[],"context_summary":"","active_id":None,"created_at":None}.items():
+    for k,v in {"phase":0,"question":"","r1":{},"r2":{},"synthesis":None,"factcheck":None,"followups":[],"context_summary":"","active_id":None,"created_at":None}.items():
         if k not in st.session_state: st.session_state[k]=v
 
 # ─── Main ─────────────────────────────────────────────────────────
@@ -522,7 +526,7 @@ def main():
 
     if start and question.strip():
         disc_id=str(uuid.uuid4())
-        st.session_state.update({"phase":1,"question":question.strip(),"r1":{},"r2":{},"synthesis":None,
+        st.session_state.update({"phase":1,"question":question.strip(),"r1":{},"r2":{},"synthesis":None,"factcheck":None,
                                   "followups":[],"context_summary":context_summary,
                                   "active_id":disc_id,"created_at":datetime.now(timezone.utc).replace(tzinfo=None).isoformat()})
 
@@ -579,6 +583,28 @@ def main():
                 f'<div style="font-size:10px;color:#2A5A4A">Claude · Gemini · GPT-4 · Perplexity · DeepSeek</div></div></div>'
                 f'<div style="color:#C0D8D0;font-size:13.5px;line-height:1.8;white-space:pre-wrap">{safe}</div></div>',unsafe_allow_html=True)
 
+    # ── Fact-Check ────────────────────────────────────────────────
+    if st.session_state.phase>=4 and not st.session_state.factcheck:
+        factcheck_prompt = (f'ORIGINAL QUESTION: "{q}"\n\n'
+                           f'SYNTHESIZED ANSWER FROM 5 AIs:\n{st.session_state.synthesis}\n\n'
+                           f'Your task: Fact-check this synthesis with healthy skepticism. Verify major claims against current sources. '
+                           f'Flag potential hallucinations, outdated info, or unsupported assertions. Cite sources. 2-3 paragraphs.')
+        with st.spinner("🔍 Perplexity fact-checking the synthesis..."):
+            try: st.session_state.factcheck = call_perplexity(FACTCHECK_SYSTEM, factcheck_prompt)
+            except Exception:
+                try: st.session_state.factcheck = call_claude(FACTCHECK_SYSTEM, factcheck_prompt)
+                except Exception as e: st.session_state.factcheck = f"Fact-check error: {e}"
+        save_discussion(_current_discussion()); st.rerun()
+
+    if st.session_state.factcheck:
+        with st.expander("🔍  FACT-CHECK — Perplexity verification with sources", expanded=False):
+            safe_fc = st.session_state.factcheck.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+            st.markdown(f'<div style="background:rgba(255,193,7,0.03);border:1px solid rgba(255,193,7,0.2);'
+                       f'border-radius:8px;padding:16px;font-family:monospace">'
+                       f'<div style="color:#FFC107;font-size:10px;font-weight:bold;letter-spacing:0.08em;margin-bottom:8px">⚠ ADVERSARIAL VERIFICATION</div>'
+                       f'<div style="color:#B8A890;font-size:12.5px;line-height:1.75;white-space:pre-wrap">{safe_fc}</div></div>',
+                       unsafe_allow_html=True)
+
     # ── Follow-up ─────────────────────────────────────────────────
     if st.session_state.phase>=4:
         divider()
@@ -618,7 +644,7 @@ def main():
         render_share_panel(q,st.session_state.synthesis,st.session_state.followups)
         st.markdown('<div style="margin-top:20px"></div>',unsafe_allow_html=True)
         if st.button("↺  NEW DISCUSSION"):
-            for k in ["phase","question","r1","r2","synthesis","followups","context_summary","active_id","created_at"]: st.session_state.pop(k,None)
+            for k in ["phase","question","r1","r2","synthesis","factcheck","followups","context_summary","active_id","created_at"]: st.session_state.pop(k,None)
             st.rerun()
 
 if __name__=="__main__":
