@@ -403,13 +403,13 @@ def render_history_sidebar():
         logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dacta.png")
         
         if os.path.exists(logo_path):
-            col1, col2 = st.columns([1, 3])
+            col1, col2 = st.columns([0.8, 3.2])
             with col1:
                 with open(logo_path, "rb") as f:
-                    st.image(f.read(), width=100)
+                    st.image(f.read(), width=70)
             with col2:
                 st.markdown('''
-                    <div style="margin-top:0px">
+                    <div style="margin-top:-8px">
                         <div style="font-size:16px;font-weight:700;color:#E1E8F0;letter-spacing:0.02em">Nexus AI</div>
                         <div style="font-size:9px;color:#5A6A7A;letter-spacing:0.05em;font-weight:600;margin-top:2px">MULTI-MODEL DISCUSSIONS</div>
                     </div>
