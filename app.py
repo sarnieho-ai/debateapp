@@ -529,13 +529,24 @@ def main():
     # Fact-check
     if st.session_state.phase>=4 and not st.session_state.factcheck:
         fc_prompt=f'QUESTION: "{q}"\n\nSYNTHESIS:\n{st.session_state.synthesis}\n\nFact-check with skepticism. Verify claims, flag hallucinations, cite sources. 2-3 paragraphs.'
-        with st.spinner("🔍 Perplexity fact-checking..."): st.session_state.factcheck=call_perplexity(FACTCHECK_SYSTEM,fc_prompt) if PERPLEXITY_KEY else call_claude(FACTCHECK_SYSTEM,fc_prompt)
+        try:
+            with st.spinner("🔍 Perplexity fact-checking..."):
+                if PERPLEXITY_KEY:
+                    try:
+                        st.session_state.factcheck=call_perplexity(FACTCHECK_SYSTEM,fc_prompt)
+                    except Exception:
+                        st.session_state.factcheck=call_claude(FACTCHECK_SYSTEM,fc_prompt)
+                else:
+                    st.session_state.factcheck=call_claude(FACTCHECK_SYSTEM,fc_prompt)
+        except Exception as e:
+            st.session_state.factcheck=f"Fact-check unavailable: {str(e)[:100]}"
         save_discussion(_current_discussion()); st.rerun()
     if st.session_state.factcheck:
-        with st.expander("🔍  FACT-CHECK — Adversarial verification with live sources",expanded=False):
+        fc_source = "PERPLEXITY" if (PERPLEXITY_KEY and "unavailable" not in st.session_state.factcheck.lower()) else "CLAUDE"
+        with st.expander(f"🔍  FACT-CHECK — Adversarial verification ({fc_source})",expanded=False):
             safe_fc=st.session_state.factcheck.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
             st.markdown(f'<div style="background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(251,191,36,0.04));border:1.5px solid rgba(251,191,36,0.4);border-radius:12px;padding:24px">'
-                       f'<div style="color:#FBB020;font-size:11px;font-weight:700;letter-spacing:0.08em;margin-bottom:12px">⚠ PERPLEXITY VERIFICATION</div>'
+                       f'<div style="color:#FBB020;font-size:11px;font-weight:700;letter-spacing:0.08em;margin-bottom:12px">⚠ {fc_source} VERIFICATION</div>'
                        f'<div style="color:#C5D1DE;font-size:13px;line-height:1.8;white-space:pre-wrap">{safe_fc}</div></div>',unsafe_allow_html=True)
 
     # Follow-ups
@@ -574,7 +585,17 @@ def main():
             with st.spinner("Synthesizing..."): fu_synth=call_claude(FOLLOWUP_SYNTH_SYSTEM,fu_sp)
             # Fact-check follow-up synthesis
             fu_fc_prompt=f'ORIGINAL: "{q}"\n\nFOLLOW-UP: "{fu_q.strip()}"\n\nFOLLOW-UP SYNTHESIS:\n{fu_synth}\n\nFact-check this follow-up response. Verify claims, cite sources. 2 paragraphs.'
-            with st.spinner("🔍 Fact-checking follow-up..."): fu_factcheck=call_perplexity(FACTCHECK_SYSTEM,fu_fc_prompt) if PERPLEXITY_KEY else call_claude(FACTCHECK_SYSTEM,fu_fc_prompt)
+            try:
+                with st.spinner("🔍 Fact-checking follow-up..."):
+                    if PERPLEXITY_KEY:
+                        try:
+                            fu_factcheck=call_perplexity(FACTCHECK_SYSTEM,fu_fc_prompt)
+                        except Exception:
+                            fu_factcheck=call_claude(FACTCHECK_SYSTEM,fu_fc_prompt)
+                    else:
+                        fu_factcheck=call_claude(FACTCHECK_SYSTEM,fu_fc_prompt)
+            except Exception as e:
+                fu_factcheck=f"Fact-check unavailable: {str(e)[:100]}"
             st.session_state.followups.append({"question":fu_q.strip(),"responses":fu_map,"synthesis":fu_synth,"factcheck":fu_factcheck,"context_summary":fu_ctx_summary})
             save_discussion(_current_discussion()); st.rerun()
 
